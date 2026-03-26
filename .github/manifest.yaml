@@ -1,0 +1,9 @@
+uses:
+  actions/checkout:
+    v6.0.2: de0fac2e4500dabe0009e67214ff5f5447ce83dd
+  actions-rust-lang/setup-rust-toolchain:
+    v1.15.4: 150fca883cd4034361b621bd4e6a9d34e5143606
+  actions-rust-lang/rustfmt:
+    v1.1.2: 4066006ec54a31931b9b1fddfd38f2fdf2d27143
+  amannn/action-semantic-pull-request:
+    v6.1.1: 48f256284bd46cdaab1048c3721360e808335d50
