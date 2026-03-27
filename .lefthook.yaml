@@ -1,0 +1,7 @@
+pre-push:
+  parallel: true
+  jobs:
+    - name: code format
+      run: cargo fmt --check
+    - name: code lint
+      run: cargo clippy
