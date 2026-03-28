@@ -60,8 +60,9 @@ The primary method to configure `changelogger` is with a configuration file. By 
 * `.config/changelogger.toml`
 * `.config/changelogger.json`
 
-> [!IMPORTANT]
+> [!WARNING]
 > If more than one of the above exist, which is used is undeterined.
+> 
 > **No more than one default configuraiton file should exist.**
 
 > [!IMPORTANT]
