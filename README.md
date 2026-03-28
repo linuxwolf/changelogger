@@ -56,6 +56,13 @@ The primary method to configure `changelogger` is with a configuration file. By 
 * `changelogger.yml` (or `.yaml`)
 * `changelogger.toml`
 * `changelogger.json`
+* `.config/changelogger.yml` (or `.yaml`)
+* `.config/changelogger.toml`
+* `.config/changelogger.json`
+
+> [!IMPORTANT]
+> If more than one of the above exist, which is used is undeterined.
+> **No more than one default configuraiton file should exist.**
 
 > [!IMPORTANT]
 > If a configuration file is specified on the command-line, the tool fails if that file cannot be read
