@@ -1,7 +1,10 @@
+use crate::{cli::Cli, errors::AppResult};
+
+mod cli;
 mod errors;
 
-use errors::Result;
+fn main() -> AppResult<()> {
+    let _cli = Cli::open();
 
-fn main() -> Result<()> {
     Ok(())
 }
