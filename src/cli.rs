@@ -1,10 +1,14 @@
 use clap::Parser;
+use clap_verbosity_flag::{InfoLevel, Verbosity};
 
 use std::ffi::OsString;
 
 #[derive(Debug, Parser, PartialEq, Eq)]
 #[command(version, about, long_about = None)]
-pub struct Cli {}
+pub struct Cli {
+    #[command(flatten)]
+    pub verbosity: Verbosity<InfoLevel>,
+}
 
 impl Cli {
     pub fn open_with<I, T>(itr: I) -> Cli
@@ -36,13 +40,23 @@ mod testing {
         let args: Vec<String> = Vec::new();
         let result = Cli::open_with(args);
 
-        assert_eq!(result, Cli {});
+        assert_eq!(
+            result,
+            Cli {
+                verbosity: Verbosity::default(),
+            }
+        );
     }
 
     #[test]
     fn open_default() {
         let result = Cli::open();
 
-        assert_eq!(result, Cli {});
+        assert_eq!(
+            result,
+            Cli {
+                verbosity: Verbosity::default(),
+            }
+        );
     }
 }
