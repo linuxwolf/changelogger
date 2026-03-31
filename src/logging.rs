@@ -70,7 +70,6 @@ fn format_record<W: io::Write + WriteColor>(w: &mut W, record: &Record) -> io::R
 mod testing {
     use std::sync::{Arc, LazyLock, Mutex};
 
-    use clap_verbosity_flag::Verbosity;
     use log::log_enabled;
 
     use super::*;
@@ -249,9 +248,7 @@ mod testing {
 
     #[test]
     fn does_init() {
-        let cli = Cli {
-            verbosity: Verbosity::default(),
-        };
+        let cli = Cli::default();
         AppLogger::<StandardStream>::init(&cli);
         assert_eq!(log_enabled!(Level::Trace), false);
         assert_eq!(log_enabled!(Level::Debug), false);
