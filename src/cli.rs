@@ -7,7 +7,7 @@ use std::ffi::OsString;
 #[command(version, about, long_about = None)]
 pub struct Cli {
     #[command(flatten)]
-    pub configuring: Configuring,
+    pub configuration: Configuration,
     #[command(flatten)]
     pub verbosity: Verbosity<InfoLevel>,
 }
@@ -27,7 +27,7 @@ impl Cli {
 }
 
 #[derive(Args, Debug, Default, PartialEq, Eq)]
-pub struct Configuring {
+pub struct Configuration {
     #[arg(long = "config")]
     /// Path to explicit configuration file to use
     pub config_file: Option<String>,
@@ -53,7 +53,7 @@ mod testing {
             result,
             Cli {
                 verbosity: Verbosity::default(),
-                configuring: Configuring::default(),
+                configuration: Configuration::default(),
             }
         );
     }
@@ -66,7 +66,7 @@ mod testing {
             result,
             Cli {
                 verbosity: Verbosity::default(),
-                configuring: Configuring::default(),
+                configuration: Configuration::default(),
             }
         );
     }

@@ -31,7 +31,7 @@ impl Settings {
             ["changelogger", ".changelogger", ".config/changelogger"]
                 .map(|v| File::with_name(v).required(false))
                 .to_vec();
-        let config_file = match cli.configuring.config_file.as_ref() {
+        let config_file = match cli.configuration.config_file.as_ref() {
             Some(config_file) => vec![
                 File::with_name(config_file),
             ],
@@ -48,12 +48,12 @@ impl Settings {
 
 #[cfg(test)]
 mod testing {
-    use std::{fs, path::Path};
+    use std::fs;
 
     use current_dir::Cwd;
     use mktemp::Temp;
 
-    use crate::cli::Configuring;
+    use crate::cli::Configuration;
 
     use super::*;
 
@@ -171,7 +171,7 @@ default-branch: master
         .unwrap();
 
         let cli = Cli {
-            configuring: Configuring {
+            configuration: Configuration {
                 config_file: config_file.to_str().map(String::from),
             },
             ..Cli::default()
