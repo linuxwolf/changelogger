@@ -1,6 +1,6 @@
 use log::{debug, error, info, warn};
 
-use crate::{cli::Cli, errors::AppResult, logging::AppLogger};
+use crate::{cli::Cli, errors::AppResult, logging::AppLogger, settings::Settings};
 
 mod cli;
 mod errors;
@@ -10,6 +10,8 @@ mod settings;
 fn main() -> AppResult<()> {
     let cli = Cli::open();
     AppLogger::<termcolor::StandardStream>::init(&cli);
+
+    let _settings = Settings::new(&cli);
 
     info!("changelogger starting ...");
     debug!("setup configuration");

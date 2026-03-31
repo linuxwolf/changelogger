@@ -33,9 +33,7 @@ impl Settings {
                 .map(|v| File::with_name(v).required(false))
                 .to_vec();
         let config_file = match configuring.config_file.as_ref() {
-            Some(config_file) => vec![
-                File::with_name(config_file),
-            ],
+            Some(config_file) => vec![File::with_name(config_file)],
             None => default_files,
         };
         let settings = Config::builder()
@@ -186,7 +184,10 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("package.json".to_string()));
         assert_eq!(settings.version_prefix, "ver".to_string());
-        assert_eq!(settings.changelog_file, Some("RELEASE-NOTES.md".to_string()));
+        assert_eq!(
+            settings.changelog_file,
+            Some("RELEASE-NOTES.md".to_string())
+        );
         assert_eq!(settings.default_branch, Some("master".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
@@ -241,7 +242,10 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("VERSION".to_string()));
         assert_eq!(settings.version_prefix, "v".to_string());
-        assert_eq!(settings.changelog_file, Some("RELEASE-NOTES.md".to_string()));
+        assert_eq!(
+            settings.changelog_file,
+            Some("RELEASE-NOTES.md".to_string())
+        );
         assert_eq!(settings.default_branch, Some("main".to_string()));
         assert_eq!(settings.include_default_sections, true);
 
@@ -297,6 +301,5 @@ default-branch: master
         );
         assert_eq!(settings.default_branch, Some("master".to_string()));
         assert_eq!(settings.include_default_sections, true);
-
     }
 }
