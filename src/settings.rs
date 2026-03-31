@@ -8,7 +8,7 @@ use crate::cli::Cli;
 pub struct Settings {
     version_file: Option<String>,
     version_prefix: String,
-    changelog_file: Option<String>,
+    changelog_file: String,
     default_branch: Option<String>,
     include_default_sections: bool,
 }
@@ -18,7 +18,7 @@ impl Default for Settings {
         Self {
             version_file: Some("VERSION".to_string()),
             version_prefix: "v".to_string(),
-            changelog_file: Some("CHANGELOG.md".to_string()),
+            changelog_file: "CHANGELOG.md".to_string(),
             default_branch: Some("main".to_string()),
             include_default_sections: true,
         }
@@ -71,7 +71,7 @@ mod testing {
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("VERSION".to_string()));
         assert_eq!(settings.version_prefix, "v".to_string());
-        assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
+        assert_eq!(settings.changelog_file, "CHANGELOG.md".to_string());
         assert_eq!(settings.default_branch, Some("main".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
@@ -99,10 +99,7 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("package.json".to_string()));
         assert_eq!(settings.version_prefix, "ver".to_string());
-        assert_eq!(
-            settings.changelog_file,
-            Some("RELEASE-NOTES.md".to_string())
-        );
+        assert_eq!(settings.changelog_file, "RELEASE-NOTES.md".to_string());
         assert_eq!(settings.default_branch, Some("master".to_string()));
         assert_eq!(settings.include_default_sections, true);
 
@@ -125,7 +122,7 @@ default-branch: primary
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("deno.json".to_string()));
         assert_eq!(settings.version_prefix, "on".to_string());
-        assert_eq!(settings.changelog_file, Some("changes.md".to_string()));
+        assert_eq!(settings.changelog_file, "changes.md".to_string());
         assert_eq!(settings.default_branch, Some("primary".to_string()));
         assert_eq!(settings.include_default_sections, true);
 
@@ -150,7 +147,7 @@ default-branch: stable
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("Cargo.toml".to_string()));
         assert_eq!(settings.version_prefix, "at".to_string());
-        assert_eq!(settings.changelog_file, Some("releases.md".to_string()));
+        assert_eq!(settings.changelog_file, "releases.md".to_string());
         assert_eq!(settings.default_branch, Some("stable".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
@@ -184,10 +181,7 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("package.json".to_string()));
         assert_eq!(settings.version_prefix, "ver".to_string());
-        assert_eq!(
-            settings.changelog_file,
-            Some("RELEASE-NOTES.md".to_string())
-        );
+        assert_eq!(settings.changelog_file, "RELEASE-NOTES.md".to_string());
         assert_eq!(settings.default_branch, Some("master".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
@@ -210,7 +204,7 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("package.json".to_string()));
         assert_eq!(settings.version_prefix, "v".to_string());
-        assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
+        assert_eq!(settings.changelog_file, "CHANGELOG.md".to_string());
         assert_eq!(settings.default_branch, Some("main".to_string()));
         assert_eq!(settings.include_default_sections, true);
 
@@ -226,7 +220,7 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("VERSION".to_string()));
         assert_eq!(settings.version_prefix, "ver".to_string());
-        assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
+        assert_eq!(settings.changelog_file, "CHANGELOG.md".to_string());
         assert_eq!(settings.default_branch, Some("main".to_string()));
         assert_eq!(settings.include_default_sections, true);
 
@@ -242,10 +236,7 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("VERSION".to_string()));
         assert_eq!(settings.version_prefix, "v".to_string());
-        assert_eq!(
-            settings.changelog_file,
-            Some("RELEASE-NOTES.md".to_string())
-        );
+        assert_eq!(settings.changelog_file, "RELEASE-NOTES.md".to_string());
         assert_eq!(settings.default_branch, Some("main".to_string()));
         assert_eq!(settings.include_default_sections, true);
 
@@ -261,7 +252,7 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("VERSION".to_string()));
         assert_eq!(settings.version_prefix, "v".to_string());
-        assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
+        assert_eq!(settings.changelog_file, "CHANGELOG.md".to_string());
         assert_eq!(settings.default_branch, Some("master".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
@@ -295,10 +286,7 @@ default-branch: master
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("deno.json".to_string()));
         assert_eq!(settings.version_prefix, "ver".to_string());
-        assert_eq!(
-            settings.changelog_file,
-            Some("RELEASE-NOTES.md".to_string())
-        );
+        assert_eq!(settings.changelog_file, "RELEASE-NOTES.md".to_string());
         assert_eq!(settings.default_branch, Some("master".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
