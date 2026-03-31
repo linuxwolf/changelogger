@@ -7,3 +7,5 @@ uses:
     v1.1.2: 4066006ec54a31931b9b1fddfd38f2fdf2d27143
   amannn/action-semantic-pull-request:
     v6.1.1: 48f256284bd46cdaab1048c3721360e808335d50
+  codecov/codecov-actions:
+    v5.5.4: 75cd11691c0faa626561e295848008c8a7dddffe

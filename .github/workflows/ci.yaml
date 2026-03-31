@@ -14,15 +14,26 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606
-      - run: cargo test
+      - run: cargo install cargo-llvm-cov
+      - run: |
+          cargo llvm-cov test --no-report
+          cargo llvm-cov report --lcov --output-path target/report.lcov
+          cargo llvm-cov report
+      - uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: target/report.lcov
+
         
   coding-checks:
     runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606
-        with:
-          components: clippy,rustfmt
+      - run: |
+          rustup component add rustfmt
+          rustup component add clippy
       - run: |
           cargo fmt --check
           cargo clippy -- -Dwarnings
