@@ -1,4 +1,4 @@
-use config::{Config, ConfigError};
+use config::{Config, ConfigError, File, FileFormat, FileSourceFile};
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deserialize)]
@@ -25,7 +25,13 @@ impl Default for Settings {
 
 impl Settings {
     pub fn new() -> Result<Settings, ConfigError> {
+        let default_files: Vec<File<FileSourceFile, FileFormat>> =
+            vec!["changelogger", ".changelogger", ".config/changelogger"]
+                .iter()
+                .map(|v| File::with_name(*v).required(false))
+                .collect();
         let builder = Config::builder();
+        let builder = builder.add_source(default_files);
 
         let s = builder.build()?;
 
@@ -35,10 +41,12 @@ impl Settings {
 
 #[cfg(test)]
 mod testing {
-    use super::*;
+    use std::fs;
 
     use current_dir::Cwd;
     use mktemp::Temp;
+
+    use super::*;
 
     #[test]
     fn settings_load_defaults() {
@@ -53,6 +61,84 @@ mod testing {
         assert_eq!(settings.version_prefix, Some("v".to_string()));
         assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
         assert_eq!(settings.default_branch, Some("main".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+    }
+
+    #[test]
+    fn settings_load_defaults_file() {
+        let mut cwd = Cwd::mutex().lock().unwrap();
+        let tmp_dir = Temp::new_dir().unwrap();
+        cwd.set(tmp_dir.as_path()).unwrap();
+        fs::write(
+            ".changelogger.yaml",
+            b"
+version-file: package.json
+version-prefix: ver
+changelog-file: RELEASE-NOTES.md
+default-branch: master
+",
+        )
+        .unwrap();
+
+        let result = Settings::new();
+        assert!(result.is_ok());
+
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("package.json".to_string()));
+        assert_eq!(settings.version_prefix, Some("ver".to_string()));
+        assert_eq!(
+            settings.changelog_file,
+            Some("RELEASE-NOTES.md".to_string())
+        );
+        assert_eq!(settings.default_branch, Some("master".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+
+        let tmp_dir = Temp::new_dir().unwrap();
+        cwd.set(tmp_dir.as_path()).unwrap();
+        fs::write(
+            "changelogger.yaml",
+            b"
+version-file: deno.json
+version-prefix: on
+changelog-file: changes.md
+default-branch: primary
+",
+        )
+        .unwrap();
+
+        let result = Settings::new();
+        assert!(result.is_ok());
+
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("deno.json".to_string()));
+        assert_eq!(settings.version_prefix, Some("on".to_string()));
+        assert_eq!(settings.changelog_file, Some("changes.md".to_string()));
+        assert_eq!(settings.default_branch, Some("primary".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+
+        let tmp_dir = Temp::new_dir().unwrap();
+        let config_dir = tmp_dir.join(".config");
+        fs::create_dir_all(config_dir.clone()).unwrap();
+        cwd.set(config_dir.as_path()).unwrap();
+        fs::write(
+            "changelogger.yaml",
+            b"
+version-file: Cargo.toml
+version-prefix: at
+changelog-file: releases.md
+default-branch: stable
+",
+        )
+        .unwrap();
+
+        let result = Settings::new();
+        assert!(result.is_ok());
+
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("Cargo.toml".to_string()));
+        assert_eq!(settings.version_prefix, Some("at".to_string()));
+        assert_eq!(settings.changelog_file, Some("releases.md".to_string()));
+        assert_eq!(settings.default_branch, Some("stable".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
 }
