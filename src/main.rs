@@ -5,6 +5,7 @@ use crate::{cli::Cli, errors::AppResult, logging::AppLogger};
 mod cli;
 mod errors;
 mod logging;
+mod settings;
 
 fn main() -> AppResult<()> {
     let cli = Cli::open();
