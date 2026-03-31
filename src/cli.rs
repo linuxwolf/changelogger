@@ -31,6 +31,22 @@ pub struct Configuration {
     #[arg(long = "config")]
     /// Path to explicit configuration file to use
     pub config_file: Option<String>,
+
+    #[arg(long = "version-file")]
+    /// Version file to use
+    pub version_file: Option<String>,
+
+    #[arg(long = "version-prefix")]
+    /// Version prefix to use when finding tags or possibly parsing version files
+    pub version_prefix: Option<String>,
+
+    #[arg(long = "changelog-file")]
+    /// Changelog file to use
+    pub changelog_file: Option<String>,
+
+    #[arg(long = "default-branch")]
+    /// Default branch to use with `git`
+    pub default_branch: Option<String>,
 }
 
 #[cfg(test)]

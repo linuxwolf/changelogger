@@ -7,7 +7,7 @@ use crate::cli::Cli;
 #[serde(default, rename_all = "kebab-case")]
 pub struct Settings {
     version_file: Option<String>,
-    version_prefix: Option<String>,
+    version_prefix: String,
     changelog_file: Option<String>,
     default_branch: Option<String>,
     include_default_sections: bool,
@@ -17,7 +17,7 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             version_file: Some("VERSION".to_string()),
-            version_prefix: Some("v".to_string()),
+            version_prefix: "v".to_string(),
             changelog_file: Some("CHANGELOG.md".to_string()),
             default_branch: Some("main".to_string()),
             include_default_sections: true,
@@ -27,22 +27,26 @@ impl Default for Settings {
 
 impl Settings {
     pub fn new(cli: &Cli) -> Result<Settings, ConfigError> {
+        let configuring = &cli.configuration;
         let default_files: Vec<File<FileSourceFile, FileFormat>> =
             ["changelogger", ".changelogger", ".config/changelogger"]
                 .map(|v| File::with_name(v).required(false))
                 .to_vec();
-        let config_file = match cli.configuration.config_file.as_ref() {
+        let config_file = match configuring.config_file.as_ref() {
             Some(config_file) => vec![
                 File::with_name(config_file),
             ],
             None => default_files,
         };
-        let builder = Config::builder();
-        let builder = builder.add_source(config_file);
+        let settings = Config::builder()
+            .add_source(config_file)
+            .set_override_option("version-file", configuring.version_file.clone())?
+            .set_override_option("version-prefix", configuring.version_prefix.clone())?
+            .set_override_option("changelog-file", configuring.changelog_file.clone())?
+            .set_override_option("default-branch", configuring.default_branch.clone())?
+            .build()?;
 
-        let s = builder.build()?;
-
-        s.try_deserialize()
+        settings.try_deserialize()
     }
 }
 
@@ -58,7 +62,7 @@ mod testing {
     use super::*;
 
     #[test]
-    fn settings_load_defaults() {
+    fn only_defaults() {
         let cli = Cli::default();
         let tmp_dir = Temp::new_dir().unwrap();
         let mut cwd = Cwd::mutex().lock().unwrap();
@@ -68,14 +72,14 @@ mod testing {
         assert!(result.is_ok());
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("VERSION".to_string()));
-        assert_eq!(settings.version_prefix, Some("v".to_string()));
+        assert_eq!(settings.version_prefix, "v".to_string());
         assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
         assert_eq!(settings.default_branch, Some("main".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
 
     #[test]
-    fn settings_load_defaults_file() {
+    fn from_defaults_files() {
         let cli = Cli::default();
         let mut cwd = Cwd::mutex().lock().unwrap();
         let tmp_dir = Temp::new_dir().unwrap();
@@ -96,7 +100,7 @@ default-branch: master
 
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("package.json".to_string()));
-        assert_eq!(settings.version_prefix, Some("ver".to_string()));
+        assert_eq!(settings.version_prefix, "ver".to_string());
         assert_eq!(
             settings.changelog_file,
             Some("RELEASE-NOTES.md".to_string())
@@ -122,7 +126,7 @@ default-branch: primary
 
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("deno.json".to_string()));
-        assert_eq!(settings.version_prefix, Some("on".to_string()));
+        assert_eq!(settings.version_prefix, "on".to_string());
         assert_eq!(settings.changelog_file, Some("changes.md".to_string()));
         assert_eq!(settings.default_branch, Some("primary".to_string()));
         assert_eq!(settings.include_default_sections, true);
@@ -147,14 +151,14 @@ default-branch: stable
 
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("Cargo.toml".to_string()));
-        assert_eq!(settings.version_prefix, Some("at".to_string()));
+        assert_eq!(settings.version_prefix, "at".to_string());
         assert_eq!(settings.changelog_file, Some("releases.md".to_string()));
         assert_eq!(settings.default_branch, Some("stable".to_string()));
         assert_eq!(settings.include_default_sections, true);
     }
 
     #[test]
-    fn settings_from_explicit_file() {
+    fn from_cli_file() {
         let tmp_dir = Temp::new_dir().unwrap();
         let mut cwd = Cwd::mutex().lock().unwrap();
         cwd.set(tmp_dir.as_path()).unwrap();
@@ -173,6 +177,7 @@ default-branch: master
         let cli = Cli {
             configuration: Configuration {
                 config_file: config_file.to_str().map(String::from),
+                ..Configuration::default()
             },
             ..Cli::default()
         };
@@ -180,9 +185,118 @@ default-branch: master
         assert!(result.is_ok());
         let settings = result.unwrap();
         assert_eq!(settings.version_file, Some("package.json".to_string()));
-        assert_eq!(settings.version_prefix, Some("ver".to_string()));
+        assert_eq!(settings.version_prefix, "ver".to_string());
         assert_eq!(settings.changelog_file, Some("RELEASE-NOTES.md".to_string()));
         assert_eq!(settings.default_branch, Some("master".to_string()));
         assert_eq!(settings.include_default_sections, true);
+    }
+
+    #[test]
+    fn defaults_with_cli_overrides() {
+        let tmp_dir = Temp::new_dir().unwrap();
+        let mut cwd = Cwd::mutex().lock().unwrap();
+        cwd.set(tmp_dir.as_path()).unwrap();
+
+        let cli = Cli {
+            configuration: Configuration {
+                version_file: Some("package.json".to_string()),
+                ..Configuration::default()
+            },
+            ..Cli::default()
+        };
+        let result = Settings::new(&cli);
+        assert!(result.is_ok());
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("package.json".to_string()));
+        assert_eq!(settings.version_prefix, "v".to_string());
+        assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
+        assert_eq!(settings.default_branch, Some("main".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+
+        let cli = Cli {
+            configuration: Configuration {
+                version_prefix: Some("ver".to_string()),
+                ..Configuration::default()
+            },
+            ..Cli::default()
+        };
+        let result = Settings::new(&cli);
+        assert!(result.is_ok());
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("VERSION".to_string()));
+        assert_eq!(settings.version_prefix, "ver".to_string());
+        assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
+        assert_eq!(settings.default_branch, Some("main".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+
+        let cli = Cli {
+            configuration: Configuration {
+                changelog_file: Some("RELEASE-NOTES.md".to_string()),
+                ..Configuration::default()
+            },
+            ..Cli::default()
+        };
+        let result = Settings::new(&cli);
+        assert!(result.is_ok());
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("VERSION".to_string()));
+        assert_eq!(settings.version_prefix, "v".to_string());
+        assert_eq!(settings.changelog_file, Some("RELEASE-NOTES.md".to_string()));
+        assert_eq!(settings.default_branch, Some("main".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+
+        let cli = Cli {
+            configuration: Configuration {
+                default_branch: Some("master".to_string()),
+                ..Configuration::default()
+            },
+            ..Cli::default()
+        };
+        let result = Settings::new(&cli);
+        assert!(result.is_ok());
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("VERSION".to_string()));
+        assert_eq!(settings.version_prefix, "v".to_string());
+        assert_eq!(settings.changelog_file, Some("CHANGELOG.md".to_string()));
+        assert_eq!(settings.default_branch, Some("master".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+    }
+
+    #[test]
+    fn file_with_overrides() {
+        let mut cwd = Cwd::mutex().lock().unwrap();
+        let tmp_dir = Temp::new_dir().unwrap();
+        cwd.set(tmp_dir.as_path()).unwrap();
+        fs::write(
+            ".changelogger.yaml",
+            b"
+version-file: package.json
+version-prefix: ver
+changelog-file: RELEASE-NOTES.md
+default-branch: master
+",
+        )
+        .unwrap();
+
+        let cli = Cli {
+            configuration: Configuration {
+                version_file: Some("deno.json".to_string()),
+                ..Configuration::default()
+            },
+            ..Cli::default()
+        };
+        let result = Settings::new(&cli);
+        assert!(result.is_ok());
+
+        let settings = result.unwrap();
+        assert_eq!(settings.version_file, Some("deno.json".to_string()));
+        assert_eq!(settings.version_prefix, "ver".to_string());
+        assert_eq!(
+            settings.changelog_file,
+            Some("RELEASE-NOTES.md".to_string())
+        );
+        assert_eq!(settings.default_branch, Some("master".to_string()));
+        assert_eq!(settings.include_default_sections, true);
+
     }
 }
