@@ -1,14 +1,14 @@
+use anyhow::Result;
 use log::{debug, info, warn};
 
-use crate::{cli::Cli, errors::AppResult, git::GitOps, logging::AppLogger, settings::Settings};
+use crate::{cli::Cli, git::GitOps, logging::AppLogger, settings::Settings};
 
 mod cli;
-mod errors;
 mod git;
 mod logging;
 mod settings;
 
-fn main() -> AppResult<()> {
+fn main() -> Result<()> {
     let cli = Cli::open();
     AppLogger::<termcolor::StandardStream>::init(&cli);
 
