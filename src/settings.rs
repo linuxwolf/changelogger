@@ -46,6 +46,14 @@ impl Settings {
 
         settings.try_deserialize()
     }
+
+    pub fn version_file(&self) -> &str {
+        self.version_file.as_deref().unwrap_or("VERSION")
+    }
+
+    pub fn default_branch(&self) -> &str {
+        self.default_branch.as_deref().unwrap_or("main")
+    }
 }
 
 #[cfg(test)]
