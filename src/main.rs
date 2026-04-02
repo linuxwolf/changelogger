@@ -1,9 +1,10 @@
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 
-use crate::{cli::Cli, errors::AppResult, logging::AppLogger, settings::Settings};
+use crate::{cli::Cli, errors::AppResult, git::GitOps, logging::AppLogger, settings::Settings};
 
 mod cli;
 mod errors;
+mod git;
 mod logging;
 mod settings;
 
@@ -11,15 +12,21 @@ fn main() -> AppResult<()> {
     let cli = Cli::open();
     AppLogger::<termcolor::StandardStream>::init(&cli);
 
-    let _settings = Settings::new(&cli);
-
     info!("changelogger starting ...");
     debug!("setup configuration");
+    let settings = Settings::new(&cli)?;
+
     debug!(
-        "read version from <default-branch>: `git cat-file --textconv <default-branch>:<version-file>"
+        "read version info from branch {}",
+        settings.default_branch(),
     );
-    error!("fails if <version-file> on <default-branch> does not exist!");
-    debug!("find matching tag: `git tag | grep <version-prefix><current-version>`");
+    let git = GitOps::new(settings.default_branch());
+    let ver = git.cat_file(settings.version_file())?.trim().to_string();
+    info!("current version is {ver}");
+
+    debug!("search for tag matching {ver}");
+    let _tags = git.tags()?;
+
     debug!("find all commits from <current-version-tag> to <default-branch>");
     debug!("process commits");
     debug!(
