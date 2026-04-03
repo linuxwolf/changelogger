@@ -16,4 +16,5 @@ termcolor = "1.4.1"
 [dev-dependencies]
 current_dir = "0.1.2"
 mktemp = "0.5.1"
+mockall = "0.14.0"
 mockcmd = { version = "0.0.1", features = ["test"] }

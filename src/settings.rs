@@ -51,7 +51,6 @@ impl Settings {
         &self.version_file
     }
 
-    #[allow(dead_code)]
     pub fn version_prefix(&self) -> &str {
         &self.version_prefix
     }

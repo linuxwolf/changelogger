@@ -1,8 +1,15 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use log::{debug, info, warn};
 
-use crate::{cli::Cli, git::GitOps, logging::AppLogger, settings::Settings};
+use crate::{
+    app::{App, AppOps},
+    cli::Cli,
+    git::GitOps,
+    logging::AppLogger,
+    settings::Settings,
+};
 
+mod app;
 mod cli;
 mod git;
 mod logging;
@@ -16,20 +23,10 @@ fn main() -> Result<()> {
     debug!("setup configuration");
     let settings = Settings::new(&cli)?;
 
-    debug!(
-        "read version info from branch {}",
-        settings.default_branch(),
-    );
-    let git = GitOps::new(settings.default_branch());
-    let ver = git
-        .cat_file(settings.version_file())
-        .with_context(|| "could not read version information")?
-        .trim()
-        .to_string();
-    info!("current version is {ver}");
+    let app = AppOps::<GitOps>::new(settings);
 
-    debug!("search for tag matching {ver}");
-    let _tags = git.tags()?;
+    let version = app.get_version()?;
+    let _tag = app.get_version_tag(&version);
 
     debug!("find all commits from <current-version-tag> to <default-branch>");
     debug!("process commits");
