@@ -1,6 +1,6 @@
 use std::{ffi::OsStr, io, str};
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Result, anyhow};
 use log::{error, warn};
 use mockcmd::Command;
 
@@ -75,17 +75,13 @@ impl Git for GitOps {
 
     fn list_commits_over(&self, from: &str) -> Result<Vec<String>> {
         let spec = format!("{from}..{}", self.branch());
-        let content = self
-            .run("rev-list", ["--reverse", &spec])
-            .with_context(|| format!("could not list commits in git index for range ({spec})"))?;
+        let content = self.run("rev-list", ["--reverse", &spec])?;
 
         Ok(split_lines(&content))
     }
 
     fn list_all_commits(&self) -> Result<Vec<String>> {
-        let content = self
-            .run("rev-list", ["--reverse", self.branch()])
-            .with_context(|| format!("could not list all commits in git index"))?;
+        let content = self.run("rev-list", ["--reverse", self.branch()])?;
 
         Ok(split_lines(&content))
     }
@@ -278,8 +274,10 @@ mod testing {
         let result = git.list_commits_over("v0.1.2");
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert_eq!(err.to_string(), "could not list commits in git index for range (v0.1.2..over-errored-history)")
-        
+        assert_eq!(
+            err.to_string(),
+            "'git rev-list' failed: fatal: some problem with index"
+        );
     }
 
     #[test]
@@ -332,12 +330,16 @@ mod testing {
             .with_arg("rev-list")
             .with_arg("--reverse")
             .with_arg("all-errored-history")
+            .with_stderr("fatal: some problem with index")
             .with_status(10)
             .register();
 
         let result = git.list_all_commits();
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert_eq!(err.to_string(), "could not list all commits in git index");
+        assert_eq!(
+            err.to_string(),
+            "'git rev-list' failed: fatal: some problem with index"
+        );
     }
 }

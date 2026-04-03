@@ -14,6 +14,7 @@ pub trait App {
     fn get_version(&self) -> Result<String>;
     #[cfg_attr(test, concretize)]
     fn get_version_tag(&self, version: &str) -> Result<Option<String>>;
+    fn list_commits(&self, from: Option<String>) -> Result<Vec<String>>;
 }
 
 pub struct AppOps<G: Git> {
@@ -64,17 +65,36 @@ impl<G: Git> App for AppOps<G> {
 
         Ok(result)
     }
+
+    fn list_commits(&self, from: Option<String>) -> Result<Vec<String>> {
+        let git = &self.git;
+
+        let commits = if let Some(from) = from {
+            git.list_commits_over(&from)
+        } else {
+            git.list_all_commits()
+        };
+
+        let commits = commits.with_context(|| {
+            format!(
+                "could not list any commits from git index for branch {}",
+                git.branch()
+            )
+        })?;
+        Ok(commits)
+    }
 }
 
 #[cfg(test)]
 mod testing {
     use anyhow::anyhow;
+    use mockall::predicate;
 
     use crate::git::MockGit;
 
     use super::*;
 
-    fn with_mocks(s: Option<Settings>) -> AppOps<MockGit> {
+    fn app_with_mocks(s: Option<Settings>) -> AppOps<MockGit> {
         let settings = s.unwrap_or_else(|| Settings::default());
         let mut git = MockGit::new();
         git.expect_branch()
@@ -92,7 +112,7 @@ mod testing {
 
     #[test]
     fn version_gets() {
-        let mut app = with_mocks(None);
+        let mut app = app_with_mocks(None);
 
         app.git
             .expect_cat_file()
@@ -106,7 +126,7 @@ mod testing {
 
     #[test]
     fn version_get_failed() {
-        let mut app = with_mocks(Some(
+        let mut app = app_with_mocks(Some(
             Settings::builder().version_file("package.json").build(),
         ));
 
@@ -127,7 +147,7 @@ mod testing {
 
     #[test]
     fn version_tag_failed() {
-        let mut app = with_mocks(None);
+        let mut app = app_with_mocks(None);
 
         app.git
             .expect_tags()
@@ -141,7 +161,7 @@ mod testing {
     }
     #[test]
     fn version_tag_gets_fuund() {
-        let mut app = with_mocks(None);
+        let mut app = app_with_mocks(None);
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
@@ -170,7 +190,7 @@ mod testing {
 
     #[test]
     fn version_tag_found_unprefixed() {
-        let mut app = with_mocks(None);
+        let mut app = app_with_mocks(None);
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
@@ -199,7 +219,7 @@ mod testing {
 
     #[test]
     fn version_tag_gets_none() {
-        let mut app = with_mocks(None);
+        let mut app = app_with_mocks(None);
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
@@ -223,7 +243,7 @@ mod testing {
 
     #[test]
     fn version_tag_gets_none_mismatched() {
-        let mut app = with_mocks(Some(Settings::builder().version_prefix("ver").build()));
+        let mut app = app_with_mocks(Some(Settings::builder().version_prefix("ver").build()));
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
@@ -246,5 +266,76 @@ mod testing {
         assert!(result.is_ok());
         let result = result.unwrap();
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn list_commits_some_tag() {
+        let mut app = app_with_mocks(None);
+        let expected = vec![
+            "b4a18697c28fe4aa83bf79d03582d27d4db20489".to_string(),
+            "69f92f057fc0640603d71b9c6d6224ed60aefe16".to_string(),
+            "70095d769bb7f235bc707c1ef7ee10653dd9df61".to_string(),
+            "571e35139871f759261bc3d8d74555a4b3aa8616".to_string(),
+            "5604a99af83ffac5c8639db7a5c6f13d4c094afc".to_string(),
+            "db86881d1d10f1de4eac8dacf5cdace152eaf2c5".to_string(),
+        ];
+
+        let retval = expected.clone();
+        app.git
+            .expect_list_commits_over()
+            .withf(|tag| tag == "v1.2.3")
+            .returning(move |_| Ok(retval.clone()));
+        let tag = "v1.2.3".to_string();
+        let result = app.list_commits(Some(tag));
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn list_commits_none_tag() {
+        let mut app = app_with_mocks(None);
+        let expected = vec![
+            "b4a18697c28fe4aa83bf79d03582d27d4db20489".to_string(),
+            "69f92f057fc0640603d71b9c6d6224ed60aefe16".to_string(),
+            "70095d769bb7f235bc707c1ef7ee10653dd9df61".to_string(),
+            "571e35139871f759261bc3d8d74555a4b3aa8616".to_string(),
+            "5604a99af83ffac5c8639db7a5c6f13d4c094afc".to_string(),
+            "db86881d1d10f1de4eac8dacf5cdace152eaf2c5".to_string(),
+        ];
+
+        let retval = expected.clone();
+        app.git
+            .expect_list_all_commits()
+            .returning(move || Ok(retval.clone()));
+        let result = app.list_commits(None);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn list_commits_failed() {
+        let mut app = app_with_mocks(None);
+
+        let tag = "v1.2.3".to_string();
+        app.git
+            .expect_list_commits_over()
+            .with(predicate::eq(tag.clone()))
+            .returning(|_| {
+                Err(anyhow!(
+                    "'git rev-list' failed: fatal: some problem with index"
+                ))
+            });
+        let result = app.list_commits(Some(tag.clone()));
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            format!(
+                "could not list any commits from git index for branch {}",
+                app.settings.default_branch()
+            )
+        );
     }
 }
