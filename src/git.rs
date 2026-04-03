@@ -14,9 +14,7 @@ pub trait Git {
     #[cfg_attr(test, concretize)]
     fn cat_file<S: AsRef<OsStr>>(&self, path: S) -> Result<String>;
     fn tags(&self) -> Result<Vec<String>>;
-    #[allow(unused)]
     fn list_commits_over(&self, from: &str) -> Result<Vec<String>>;
-    #[allow(unused)]
     fn list_all_commits(&self) -> Result<Vec<String>>;
 }
 
