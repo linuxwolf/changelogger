@@ -51,7 +51,6 @@ impl Settings {
         &self.version_file
     }
 
-    #[allow(dead_code)]
     pub fn version_prefix(&self) -> &str {
         &self.version_prefix
     }
@@ -59,10 +58,6 @@ impl Settings {
     #[allow(dead_code)]
     pub fn changelog_file(&self) -> &str {
         &self.changelog_file
-    }
-
-    pub fn version_prefix(&self) -> &str {
-        &self.version_prefix
     }
 
     pub fn default_branch(&self) -> &str {
