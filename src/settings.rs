@@ -51,6 +51,10 @@ impl Settings {
         self.version_file.as_deref().unwrap_or("VERSION")
     }
 
+    pub fn version_prefix(&self) -> &str {
+        &self.version_prefix
+    }
+
     pub fn default_branch(&self) -> &str {
         self.default_branch.as_deref().unwrap_or("main")
     }
