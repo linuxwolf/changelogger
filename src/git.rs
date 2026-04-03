@@ -88,7 +88,7 @@ impl Git for GitOps {
 }
 
 fn split_lines(content: &str) -> Vec<String> {
-    if content.len() == 0 {
+    if content.is_empty() {
         Vec::new()
     } else {
         content.trim().split('\n').map(String::from).collect()
