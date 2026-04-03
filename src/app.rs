@@ -66,12 +66,14 @@ impl<G: Git> App for AppOps<G> {
 
 #[cfg(test)]
 mod testing {
+    use anyhow::anyhow;
+
     use crate::git::MockGit;
 
     use super::*;
 
-    fn with_mocks() -> AppOps<MockGit> {
-        let settings = Settings::default();
+    fn with_mocks(s: Option<Settings>) -> AppOps<MockGit> {
+        let settings = s.unwrap_or_else(|| Settings::default());
         let mut git = MockGit::new();
         git.expect_branch()
             .return_const(settings.default_branch().to_string());
@@ -87,8 +89,8 @@ mod testing {
     }
 
     #[test]
-    fn gets_version() {
-        let mut app = with_mocks();
+    fn version_gets() {
+        let mut app = with_mocks(None);
 
         app.git
             .expect_cat_file()
@@ -97,11 +99,31 @@ mod testing {
 
         let result = app.get_version();
         assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "2.1.0");
     }
 
     #[test]
-    fn gets_version_tag_found() {
-        let mut app = with_mocks();
+    fn version_get_failed() {
+        let mut app = with_mocks(Some(
+            Settings::builder().version_file("package.json").build(),
+        ));
+
+        app.git
+            .expect_cat_file()
+            .withf(|p| p.as_ref() == "package.json")
+            .returning(|_| {
+                Err(anyhow!(
+                    "'git cat-file' failed: fatal: path 'package.json' does not exist in 'main'"
+                ))
+            });
+
+        let result = app.get_version();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn version_tag_gets_fuund() {
+        let mut app = with_mocks(None);
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
@@ -128,8 +150,8 @@ mod testing {
     }
 
     #[test]
-    fn gets_version_tag_unprefixed() {
-        let mut app = with_mocks();
+    fn version_tag_found_unprefixed() {
+        let mut app = with_mocks(None);
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
@@ -156,8 +178,8 @@ mod testing {
     }
 
     #[test]
-    fn gets_version_tag_none() {
-        let mut app = with_mocks();
+    fn version_tag_gets_none() {
+        let mut app = with_mocks(None);
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
@@ -169,6 +191,35 @@ mod testing {
                 "v1.2.0".to_string(),
                 "v1.2.1".to_string(),
                 "v2.0.0".to_string(),
+            ])
+        });
+        let version = "2.1.0";
+        let result = app.get_version_tag(version);
+        assert!(result.is_ok());
+        let result = result.unwrap();
+        assert!(result.is_none());
+    }
+
+
+    #[test]
+    fn version_tag_gets_none_mismatched() {
+        let mut app = with_mocks(Some(
+            Settings::builder().version_prefix("ver").build()
+        ));
+
+        app.git.expect_tags().returning(|| {
+            Ok(vec![
+                "v0.1.0".to_string(),
+                "v0.1.2".to_string(),
+                "v0.1.3".to_string(),
+                "v1.0.0".to_string(),
+                "v1.0.1".to_string(),
+                "v1.2.0".to_string(),
+                "v1.2.1".to_string(),
+                "v2.0.0".to_string(),
+                "v2.0.1".to_string(),
+                "v2.0.2".to_string(),
+                "v2.1.0".to_string(),
             ])
         });
         let version = "2.1.0";
