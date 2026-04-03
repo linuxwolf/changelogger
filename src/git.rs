@@ -1,9 +1,8 @@
 use std::{ffi::OsStr, io, str};
 
+use anyhow::{Result, anyhow};
 use log::{error, warn};
 use mockcmd::Command;
-
-use crate::errors::{AppError, AppResult};
 
 pub struct GitOps {
     branch: String,
@@ -16,18 +15,23 @@ impl GitOps {
         }
     }
 
-    pub fn cat_file<S: AsRef<OsStr>>(&self, path: S) -> AppResult<String> {
-        let path = format!("{}:{}", self.branch, path.as_ref().display());
-        self.run("cat-file", ["--textconv", &path])
+    pub fn cat_file<S: AsRef<OsStr>>(&self, path: S) -> Result<String> {
+        let branch = &self.branch;
+        let path = path.as_ref().display();
+        let spec = format!("{}:{}", branch, path);
+
+        let result = self.run("cat-file", ["--textconv", &spec])?;
+        Ok(result)
     }
 
-    pub fn tags(&self) -> AppResult<Vec<String>> {
+    pub fn tags(&self) -> Result<Vec<String>> {
         let content = self.run("tag", [])?;
         let tags = content.split('\n');
+
         Ok(Vec::from_iter(tags.map(String::from)))
     }
 
-    fn run<I, S>(&self, cmd: S, args: I) -> AppResult<String>
+    fn run<I, S>(&self, cmd: S, args: I) -> Result<String>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -37,17 +41,14 @@ impl GitOps {
         let stderr = str::from_utf8(&output.stderr).map_err(io::Error::other)?;
         if !output.status.success() {
             error!("{}", stderr);
+            let msg = stderr.split('\n').next_back().unwrap_or_default();
             let command = format!("git {}", cmd.as_ref().display());
-            let code = output.status.code();
-            let code = code.unwrap_or(-1);
-            return Err(AppError::CmdFailed { command, code });
+            return Err(anyhow!("'git {command}' failed: {msg}"));
         } else if !stderr.is_empty() {
             warn!("{}", stderr);
         }
 
-        let stdout = str::from_utf8(&output.stdout)
-            .map_err(io::Error::other)?
-            .to_string();
+        let stdout = str::from_utf8(&output.stdout)?.to_string();
         Ok(stdout)
     }
 }
@@ -56,7 +57,7 @@ impl GitOps {
 mod testing {
     use mockcmd::{mock, was_command_executed};
 
-    use crate::{errors::AppError, git::GitOps};
+    use super::*;
 
     #[test]
     fn runs_success() {
@@ -97,7 +98,8 @@ mod testing {
             .register();
 
         let result = git.run("log", ["--oneline", "with-error"]);
-        assert!(matches!(result, Err(AppError::CmdFailed { command, .. }) if command == "git log"));
+        assert!(result.is_err());
+        result.expect_err("'git log' failed: fatal: stopped at some error");
         assert!(was_command_executed(&[
             "git",
             "log",

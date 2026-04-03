@@ -1,14 +1,14 @@
+use anyhow::{Context, Result};
 use log::{debug, info, warn};
 
-use crate::{cli::Cli, errors::AppResult, git::GitOps, logging::AppLogger, settings::Settings};
+use crate::{cli::Cli, git::GitOps, logging::AppLogger, settings::Settings};
 
 mod cli;
-mod errors;
 mod git;
 mod logging;
 mod settings;
 
-fn main() -> AppResult<()> {
+fn main() -> Result<()> {
     let cli = Cli::open();
     AppLogger::<termcolor::StandardStream>::init(&cli);
 
@@ -21,7 +21,11 @@ fn main() -> AppResult<()> {
         settings.default_branch(),
     );
     let git = GitOps::new(settings.default_branch());
-    let ver = git.cat_file(settings.version_file())?.trim().to_string();
+    let ver = git
+        .cat_file(settings.version_file())
+        .with_context(|| "could not read version information")?
+        .trim()
+        .to_string();
     info!("current version is {ver}");
 
     debug!("search for tag matching {ver}");
