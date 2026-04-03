@@ -320,7 +320,9 @@ pub struct SettingsBuilder {
 #[cfg(test)]
 impl Settings {
     pub fn builder() -> SettingsBuilder {
-        SettingsBuilder { settings: Settings::default() }
+        SettingsBuilder {
+            settings: Settings::default(),
+        }
     }
 }
 
