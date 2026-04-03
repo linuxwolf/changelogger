@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use log::{debug, info, warn};
 
 use crate::{cli::Cli, git::GitOps, logging::AppLogger, settings::Settings};
@@ -21,7 +21,11 @@ fn main() -> Result<()> {
         settings.default_branch(),
     );
     let git = GitOps::new(settings.default_branch());
-    let ver = git.cat_file(settings.version_file())?.trim().to_string();
+    let ver = git
+        .cat_file(settings.version_file())
+        .with_context(|| "could not read version information")?
+        .trim()
+        .to_string();
     info!("current version is {ver}");
 
     debug!("search for tag matching {ver}");
