@@ -4,6 +4,18 @@ use anyhow::{Result, anyhow};
 use log::{error, warn};
 use mockcmd::Command;
 
+#[cfg(test)]
+use mockall::{automock, concretize};
+
+#[cfg_attr(test, automock)]
+pub trait Git {
+    fn branch(&self) -> &str;
+
+    #[cfg_attr(test, concretize)]
+    fn cat_file<S: AsRef<OsStr>>(&self, path: S) -> Result<String>;
+    fn tags(&self) -> Result<Vec<String>>;
+}
+
 pub struct GitOps {
     branch: String,
 }
@@ -13,22 +25,6 @@ impl GitOps {
         GitOps {
             branch: branch.as_ref().to_string(),
         }
-    }
-
-    pub fn cat_file<S: AsRef<OsStr>>(&self, path: S) -> Result<String> {
-        let branch = &self.branch;
-        let path = path.as_ref().display();
-        let spec = format!("{}:{}", branch, path);
-
-        let result = self.run("cat-file", ["--textconv", &spec])?;
-        Ok(result)
-    }
-
-    pub fn tags(&self) -> Result<Vec<String>> {
-        let content = self.run("tag", [])?;
-        let tags = content.split('\n');
-
-        Ok(Vec::from_iter(tags.map(String::from)))
     }
 
     fn run<I, S>(&self, cmd: S, args: I) -> Result<String>
@@ -50,6 +46,28 @@ impl GitOps {
 
         let stdout = str::from_utf8(&output.stdout)?.to_string();
         Ok(stdout)
+    }
+}
+
+impl Git for GitOps {
+    fn branch(&self) -> &str {
+        &self.branch
+    }
+
+    fn cat_file<S: AsRef<OsStr>>(&self, path: S) -> Result<String> {
+        let branch = self.branch();
+        let path = path.as_ref().display();
+        let spec = format!("{}:{}", branch, path);
+
+        let result = self.run("cat-file", ["--textconv", &spec])?;
+        Ok(result)
+    }
+
+    fn tags(&self) -> Result<Vec<String>> {
+        let content = self.run("tag", [])?;
+        let tags = content.split('\n');
+
+        Ok(Vec::from_iter(tags.map(String::from)))
     }
 }
 
