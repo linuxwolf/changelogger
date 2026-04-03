@@ -200,12 +200,9 @@ mod testing {
         assert!(result.is_none());
     }
 
-
     #[test]
     fn version_tag_gets_none_mismatched() {
-        let mut app = with_mocks(Some(
-            Settings::builder().version_prefix("ver").build()
-        ));
+        let mut app = with_mocks(Some(Settings::builder().version_prefix("ver").build()));
 
         app.git.expect_tags().returning(|| {
             Ok(vec![
