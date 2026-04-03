@@ -70,8 +70,10 @@ impl<G: Git> App for AppOps<G> {
         let git = &self.git;
 
         let commits = if let Some(from) = from {
+            debug!("find all commits from {from} to {}", git.branch());
             git.list_commits_over(&from)
         } else {
+            debug!("find all commits from for {}", git.branch());
             git.list_all_commits()
         };
 
