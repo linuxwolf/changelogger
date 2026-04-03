@@ -26,9 +26,9 @@ fn main() -> Result<()> {
     let app = AppOps::<GitOps>::new(settings);
 
     let version = app.get_version()?;
-    let _tag = app.get_version_tag(&version);
+    let tag = app.get_version_tag(&version)?;
 
-    debug!("find all commits from <current-version-tag> to <default-branch>");
+    let _commits = app.list_commits(tag)?;
     debug!("process commits");
     debug!(
         "read current changelog from <default-branch>: `git cat-file --textconv <default-branch>:<changelog-file>"
