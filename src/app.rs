@@ -158,6 +158,7 @@ mod testing {
                 "v2.1.0".to_string(),
             ])
         });
+
         let version = "2.1.0";
         let result = app.get_version_tag(version);
         assert!(result.is_ok());
@@ -186,6 +187,7 @@ mod testing {
                 "2.1.0".to_string(),
             ])
         });
+
         let version = "2.1.0";
         let result = app.get_version_tag(version);
         assert!(result.is_ok());
@@ -211,6 +213,7 @@ mod testing {
                 "v2.0.0".to_string(),
             ])
         });
+
         let version = "2.1.0";
         let result = app.get_version_tag(version);
         assert!(result.is_ok());
@@ -237,6 +240,7 @@ mod testing {
                 "v2.1.0".to_string(),
             ])
         });
+
         let version = "2.1.0";
         let result = app.get_version_tag(version);
         assert!(result.is_ok());
