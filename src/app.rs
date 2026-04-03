@@ -38,7 +38,7 @@ impl<G: Git> App for AppOps<G> {
         debug!("read version info from branch {}", git.branch(),);
         let version = git
             .cat_file(settings.version_file())
-            .with_context(|| "could not read version information")?
+            .with_context(|| "could not read version from git index")?
             .trim()
             .to_string();
         info!("current version is {version}");
@@ -54,7 +54,9 @@ impl<G: Git> App for AppOps<G> {
         let prefix = settings.version_prefix();
         let full_version = format!("{prefix}{version}");
 
-        let tags = git.tags()?;
+        let tags = git
+            .tags()
+            .with_context(|| "could not list tags from git index")?;
         let result = tags
             .iter()
             .find(|&t| t == version || &full_version == t)
@@ -119,8 +121,24 @@ mod testing {
 
         let result = app.get_version();
         assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.to_string(), "could not read version from git index");
     }
 
+    #[test]
+    fn version_tag_failed() {
+        let mut app = with_mocks(None);
+
+        app.git
+            .expect_tags()
+            .returning(|| Err(anyhow!("'git tag' failed: fatal: some problem with index")));
+
+        let version = "2.1.0";
+        let result = app.get_version_tag(version);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.to_string(), "could not list tags from git index");
+    }
     #[test]
     fn version_tag_gets_fuund() {
         let mut app = with_mocks(None);
