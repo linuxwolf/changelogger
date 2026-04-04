@@ -5,7 +5,7 @@ Thanks for your interesting in contributing! Feel free to create pull-request fr
 > [!IMPORTANT]
 > By submitting a PR, you agree that the copyright for your changes belongs with the [AUTHORS](AUTHORS).
 > 
-> Regular contributors will be added to the `AUTHORS` file; we appreciate that what "regular" means is very subjective at this time.
+> Regular contributors will be added to the `AUTHORS` file; we appreciate your understanding that what "regular" means is very subjective at this time.
 
 ## PREREQUISITES
 
@@ -20,15 +20,15 @@ The following are recommended
 
 ## DEVCONTAINER
 
-This projects provides a [devcontainer](https://containers.dev) environment. All of the [development](#developing) tasks can be done within the devcontainer, though note that the default target will be a linux OS, regardless of what your workstation is (e.g., MacOS). The devcontainer is set up with all the configuration and prerequisites necessary to [cross-compile](https://rust-lang.github.io/rustup/cross-compilation.html) to the following targets:
+This projects provides a [devcontainer](https://containers.dev) environment. All of the [development](#developing) tasks can be done within the devcontainer. However, the default target will be a linux OS matching your host's architecture, regardless of what your workstation is (e.g., M1 MacOS). The devcontainer is initialized with all the configuration and prerequisites necessary to [cross-compile](https://rust-lang.github.io/rustup/cross-compilation.html) to the following targets:
 
 * `aarch64-apple-darwin`
 * `aarch64-unknown-linux-musl`
 * `x86_64-apple-darwin`
-* `x86_64-unknown-linux-must`
+* `x86_64-unknown-linux-musl`
 
 > [!NOTE]
-> Cross-compilation uses [LLVM linker](https://lld.llvm.org/) `lld`. Although compiled without `glibc`, the produced binary should funcation without issue on just about every Linux distribution for the supported architecture (e.g., `aarch64`).
+> Cross-compilation uses the [LLVM linker](https://lld.llvm.org/) `lld`. Although compiled without `glibc`, the produced binary should funcation without issue on just about every Linux distribution for the supported architecture (e.g., `aarch64`).
 
 ## DEVELOPING
 
