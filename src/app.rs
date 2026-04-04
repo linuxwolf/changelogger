@@ -123,9 +123,10 @@ mod testing {
         AppOps { settings, git }
     }
 
-    fn create_commit_log_item(commit: &str) -> LogItem {
+    fn create_commit_log_item<A: AsRef<str> + ToString>(commit: A) -> LogItem {
+        let commit = commit.to_string();
         LogItem {
-            commit: commit.to_string(),
+            commit: commit.clone(),
             subject: format!("feat: Feature for {commit}"),
             body: Some(format!("body for {commit}")),
         }
@@ -307,7 +308,7 @@ mod testing {
             "5604a99af83ffac5c8639db7a5c6f13d4c094afc".to_string(),
             "db86881d1d10f1de4eac8dacf5cdace152eaf2c5".to_string(),
         ];
-        let expected: Vec<LogItem> = hashes.iter().map(|h| create_commit_log_item(h)).collect();
+        let expected: Vec<LogItem> = hashes.iter().map(create_commit_log_item).collect();
 
         let retval = hashes.clone();
         app.git
@@ -343,7 +344,7 @@ mod testing {
             "5604a99af83ffac5c8639db7a5c6f13d4c094afc".to_string(),
             "db86881d1d10f1de4eac8dacf5cdace152eaf2c5".to_string(),
         ];
-        let expected: Vec<LogItem> = hashes.iter().map(|h| create_commit_log_item(h)).collect();
+        let expected: Vec<LogItem> = hashes.iter().map(create_commit_log_item).collect();
 
         let retval = hashes.clone();
         app.git
