@@ -113,4 +113,4 @@ The following defaults are applied:
 
 ## CONTRIBUTING
 
-See (CONTRIBUTING)[CONTRIBUTING.md] for information on developing and contributing to this project.
+See [CONTRIBUTING](CONTRIBUTING.md) for information on developing and contributing to this project.
