@@ -16,6 +16,7 @@ pub trait Git {
     fn tags(&self) -> Result<Vec<String>>;
     fn list_commits_over(&self, from: &str) -> Result<Vec<String>>;
     fn list_all_commits(&self) -> Result<Vec<String>>;
+    fn get_log_for(&self, commit: &str) -> Result<(String, Option<String>)>;
 }
 
 pub struct GitOps {
@@ -82,6 +83,18 @@ impl Git for GitOps {
         let content = self.run("rev-list", ["--reverse", self.branch()])?;
 
         Ok(split_lines(&content))
+    }
+
+    fn get_log_for(&self, commit: &str) -> Result<(String, Option<String>)> {
+        let content = self.run("log", ["-n", "1", "--format='%s%n%n%b'", commit])?;
+        let parts: Vec<&str> = content.trim().splitn(3, '\n').collect();
+
+        let subject = parts[0].to_string();
+        let body = if let Some(b) = parts.get(2) { b } else { "" };
+        let body = body.trim();
+        let body = if body != "" { Some(body.to_string()) } else { None };
+
+        Ok((subject, body))
     }
 }
 
@@ -233,6 +246,7 @@ mod testing {
             .with_arg("--reverse")
             .with_arg("v0.1.2..over-fixed-history")
             .with_stdout(stdout)
+            .with_status(0)
             .register();
 
         let result = git.list_commits_over("v0.1.2");
@@ -249,6 +263,7 @@ mod testing {
             .with_arg("rev-list")
             .with_arg("--reverse")
             .with_arg("v0.1.2..over-empty-history")
+            .with_status(0)
             .register();
 
         let result = git.list_commits_over("v0.1.2");
@@ -296,6 +311,7 @@ mod testing {
             .with_arg("--reverse")
             .with_arg("all-fixed-history")
             .with_stdout(stdout)
+            .with_status(0)
             .register();
 
         let result = git.list_all_commits();
@@ -312,6 +328,7 @@ mod testing {
             .with_arg("rev-list")
             .with_arg("--reverse")
             .with_arg("all-empty-history")
+            .with_status(0)
             .register();
 
         let result = git.list_all_commits();
@@ -339,5 +356,79 @@ mod testing {
             err.to_string(),
             "'git rev-list' failed: fatal: some problem with index"
         );
+    }
+
+    #[test]
+    fn get_log_for_pass() {
+        let git = GitOps::new("get-log-pass");
+        let msg = vec![
+            "feat: the new feature",
+            "",
+            "Added and amazing new feature!\nContributed-by: someone <me@example.com>",
+        ];
+        let stdout = msg.join("\n");
+
+        let commit = "abcdef1";
+        mock("git")
+            .with_arg("log")
+            .with_arg("-n")
+            .with_arg("1")
+            .with_arg("--format='%s%n%n%b'")
+            .with_arg(commit)
+            .with_stdout(stdout)
+            .with_status(0)
+            .register();
+        let result = git.get_log_for(commit);
+        assert!(result.is_ok());
+        let (subject, body) = result.unwrap();
+        assert_eq!(subject, msg[0]);
+        assert_eq!(body, Some(msg[2].to_string()));
+    }
+
+    #[test]
+    fn get_log_no_body() {
+        let git = GitOps::new("get-log-subject-only");
+        let msg = vec![
+            "feat: the new feature",
+            "",
+            "",
+        ];
+        let stdout = msg.join("\n");
+
+        let commit = "7654321";
+        mock("git")
+            .with_arg("log")
+            .with_arg("-n")
+            .with_arg("1")
+            .with_arg("--format='%s%n%n%b'")
+            .with_arg(commit)
+            .with_stdout(stdout)
+            .with_status(0)
+            .register();
+        let result = git.get_log_for(commit);
+        assert!(result.is_ok());
+        let (subject, body) = result.unwrap();
+        assert_eq!(subject, msg[0]);
+        assert_eq!(body, None);
+    }
+
+    #[test]
+    fn get_log_errored() {
+        let git = GitOps::new("get-log-errored");
+
+        let commit = "a0b1c2d";
+        mock("git")
+            .with_arg("log")
+            .with_arg("-n")
+            .with_arg("1")
+            .with_arg("--format='%s%n%n%b'")
+            .with_arg(commit)
+            .with_stderr("fatal: unknown revision or path not in the working tree")
+            .with_status(128)
+            .register();
+        let result = git.get_log_for(commit);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert_eq!(err.to_string(), "'git log' failed: fatal: unknown revision or path not in the working tree");
     }
 }
