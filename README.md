@@ -110,3 +110,7 @@ The following defaults are applied:
 | `changelog-file` | `CHANGELOG.md` |
 | `default-branch` | `main`         |
 | `version-prefix` | `v`            |
+
+## CONTRIBUTING
+
+See [CONTRIBUTING.md] for information on developing and contributing to this project.
