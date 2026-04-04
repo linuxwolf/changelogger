@@ -94,7 +94,11 @@ impl<G: Git> App for AppOps<G> {
         let mut logs = Vec::<LogItem>::new();
         for commit in commits {
             let (subject, body) = git.get_log_for(&commit)?;
-            logs.push(LogItem { commit, subject, body });
+            logs.push(LogItem {
+                commit,
+                subject,
+                body,
+            });
         }
 
         Ok(logs)
@@ -314,10 +318,12 @@ mod testing {
         app.git
             .expect_get_log_for()
             .times(hashes.len())
-            .returning(|commit| Ok((
-                format!("feat: Feature for {commit}"),
-                Some(format!("body for {commit}")),
-            )));
+            .returning(|commit| {
+                Ok((
+                    format!("feat: Feature for {commit}"),
+                    Some(format!("body for {commit}")),
+                ))
+            });
 
         let tag = "v1.2.3".to_string();
         let result = app.list_commits(Some(tag));
@@ -347,10 +353,12 @@ mod testing {
         app.git
             .expect_get_log_for()
             .times(hashes.len())
-            .returning(|commit| Ok((
-                format!("feat: Feature for {commit}"),
-                Some(format!("body for {commit}")),
-            )));
+            .returning(|commit| {
+                Ok((
+                    format!("feat: Feature for {commit}"),
+                    Some(format!("body for {commit}")),
+                ))
+            });
 
         let result = app.list_commits(None);
         assert!(result.is_ok());

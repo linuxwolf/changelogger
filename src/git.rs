@@ -92,7 +92,11 @@ impl Git for GitOps {
         let subject = parts[0].to_string();
         let body = if let Some(b) = parts.get(2) { b } else { "" };
         let body = body.trim();
-        let body = if body != "" { Some(body.to_string()) } else { None };
+        let body = if !body.is_empty() {
+            Some(body.to_string())
+        } else {
+            None
+        };
 
         Ok((subject, body))
     }
@@ -388,11 +392,7 @@ mod testing {
     #[test]
     fn get_log_no_body() {
         let git = GitOps::new("get-log-subject-only");
-        let msg = vec![
-            "feat: the new feature",
-            "",
-            "",
-        ];
+        let msg = vec!["feat: the new feature", "", ""];
         let stdout = msg.join("\n");
 
         let commit = "7654321";
@@ -429,6 +429,9 @@ mod testing {
         let result = git.get_log_for(commit);
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert_eq!(err.to_string(), "'git log' failed: fatal: unknown revision or path not in the working tree");
+        assert_eq!(
+            err.to_string(),
+            "'git log' failed: fatal: unknown revision or path not in the working tree"
+        );
     }
 }
