@@ -1,0 +1,13 @@
+{
+	"name": "changelogger",
+	"build": {
+		"dockerfile": "./Dockerfile",
+		"context": "."
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers-extra/features/lefthook-asdf:1": {},
+		"ghcr.io/devcontainers-community/features/llvm:3": {}
+	},
+	"remoteUser": "vscode"
+}
