@@ -14,7 +14,14 @@ pub trait App {
     fn get_version(&self) -> Result<String>;
     #[cfg_attr(test, concretize)]
     fn get_version_tag(&self, version: &str) -> Result<Option<String>>;
-    fn list_commits(&self, from: Option<String>) -> Result<Vec<String>>;
+    fn list_commits(&self, from: Option<String>) -> Result<Vec<LogItem>>;
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LogItem {
+    commit: String,
+    subject: String,
+    body: Option<String>,
 }
 
 pub struct AppOps<G: Git> {
@@ -66,7 +73,7 @@ impl<G: Git> App for AppOps<G> {
         Ok(result)
     }
 
-    fn list_commits(&self, from: Option<String>) -> Result<Vec<String>> {
+    fn list_commits(&self, from: Option<String>) -> Result<Vec<LogItem>> {
         let git = &self.git;
 
         let commits = if let Some(from) = from {
@@ -83,7 +90,14 @@ impl<G: Git> App for AppOps<G> {
                 git.branch()
             )
         })?;
-        Ok(commits)
+
+        let mut logs = Vec::<LogItem>::new();
+        for commit in commits {
+            let (subject, body) = git.get_log_for(&commit)?;
+            logs.push(LogItem { commit, subject, body });
+        }
+
+        Ok(logs)
     }
 }
 
@@ -103,6 +117,14 @@ mod testing {
             .return_const(settings.default_branch().to_string());
 
         AppOps { settings, git }
+    }
+
+    fn create_commit_log_item(commit: &str) -> LogItem {
+        LogItem {
+            commit: commit.to_string(),
+            subject: format!("feat: Feature for {commit}"),
+            body: Some(format!("body for {commit}")),
+        }
     }
 
     #[test]
@@ -273,7 +295,7 @@ mod testing {
     #[test]
     fn list_commits_some_tag() {
         let mut app = app_with_mocks(None);
-        let expected = vec![
+        let hashes = vec![
             "b4a18697c28fe4aa83bf79d03582d27d4db20489".to_string(),
             "69f92f057fc0640603d71b9c6d6224ed60aefe16".to_string(),
             "70095d769bb7f235bc707c1ef7ee10653dd9df61".to_string(),
@@ -281,12 +303,22 @@ mod testing {
             "5604a99af83ffac5c8639db7a5c6f13d4c094afc".to_string(),
             "db86881d1d10f1de4eac8dacf5cdace152eaf2c5".to_string(),
         ];
+        let expected: Vec<LogItem> = hashes.iter().map(|h| create_commit_log_item(h)).collect();
 
-        let retval = expected.clone();
+        let retval = hashes.clone();
         app.git
             .expect_list_commits_over()
             .withf(|tag| tag == "v1.2.3")
             .returning(move |_| Ok(retval.clone()));
+
+        app.git
+            .expect_get_log_for()
+            .times(hashes.len())
+            .returning(|commit| Ok((
+                format!("feat: Feature for {commit}"),
+                Some(format!("body for {commit}")),
+            )));
+
         let tag = "v1.2.3".to_string();
         let result = app.list_commits(Some(tag));
         assert!(result.is_ok());
@@ -297,7 +329,7 @@ mod testing {
     #[test]
     fn list_commits_none_tag() {
         let mut app = app_with_mocks(None);
-        let expected = vec![
+        let hashes = vec![
             "b4a18697c28fe4aa83bf79d03582d27d4db20489".to_string(),
             "69f92f057fc0640603d71b9c6d6224ed60aefe16".to_string(),
             "70095d769bb7f235bc707c1ef7ee10653dd9df61".to_string(),
@@ -305,11 +337,21 @@ mod testing {
             "5604a99af83ffac5c8639db7a5c6f13d4c094afc".to_string(),
             "db86881d1d10f1de4eac8dacf5cdace152eaf2c5".to_string(),
         ];
+        let expected: Vec<LogItem> = hashes.iter().map(|h| create_commit_log_item(h)).collect();
 
-        let retval = expected.clone();
+        let retval = hashes.clone();
         app.git
             .expect_list_all_commits()
             .returning(move || Ok(retval.clone()));
+
+        app.git
+            .expect_get_log_for()
+            .times(hashes.len())
+            .returning(|commit| Ok((
+                format!("feat: Feature for {commit}"),
+                Some(format!("body for {commit}")),
+            )));
+
         let result = app.list_commits(None);
         assert!(result.is_ok());
         let result = result.unwrap();
