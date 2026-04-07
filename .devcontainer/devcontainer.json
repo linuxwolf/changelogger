@@ -1,13 +1,9 @@
 {
 	"name": "changelogger",
-	"build": {
-		"dockerfile": "./Dockerfile",
-		"context": "."
-	},
+	"image": "mcr.microsoft.com/devcontainers/rust:latest",
 	"features": {
-		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/devcontainers-extra/features/lefthook-asdf:1": {},
-		"ghcr.io/devcontainers-community/features/llvm:3": {}
+		"ghcr.io/devcontainer-community/devcontainer-features/bat:1": {},
+		"ghcr.io/devcontainers-extra/features/lefthook-asdf:1": {}
 	},
 	"remoteUser": "vscode"
 }
