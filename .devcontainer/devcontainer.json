@@ -1,13 +1,24 @@
 {
 	"name": "changelogger",
-	"build": {
-		"dockerfile": "./Dockerfile",
-		"context": "."
-	},
+	"image": "mcr.microsoft.com/devcontainers/rust:latest",
 	"features": {
-		"ghcr.io/devcontainers/features/github-cli:1": {},
-		"ghcr.io/devcontainers-extra/features/lefthook-asdf:1": {},
-		"ghcr.io/devcontainers-community/features/llvm:3": {}
+		"ghcr.io/devcontainer-community/devcontainer-features/bat:1": {},
+		"ghcr.io/devcontainers-extra/features/lefthook-asdf:1": {}
 	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"editorconfig.Editorconfig",
+				"llvm-vs-code-extensions.lldb-dap",
+				"rust-lang.rust-analyzer",
+				"vadimcn.vscode-lldb",
+				"donjayamanne.githistory",
+				"waderyan.gitblame",
+				"mhutchie.git-graph",
+				"ms-vscode.makefile-tools"
+			]
+		}
+	},
+	"postCreateCommand": "./.devcontainer/script/install.sh",
 	"remoteUser": "vscode"
 }
